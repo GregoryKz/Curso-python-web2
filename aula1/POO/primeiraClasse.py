@@ -6,7 +6,7 @@ class Pessoa ():
         self.cpf = cpf
         self.cartao = cartao
     def apresentar (self):
-        print (f"nome:{self.nome}, idade:{self.idade},cpf:{self.cpf}, cartao{self.cartao} "
+        print (f" Olá meu nome é:{self.nome}tenho:{self.idade}anos, meu cpf:{self.cpf},meu  cartão e {self.cartao} "
                )
         
         
@@ -17,3 +17,18 @@ pessoa4 = Pessoa("Luiza", 22, "Não", "4564645645", "354654156")
 
 print (vars(pessoa1))
 print (pessoa2.nome)
+
+
+nome = input ("DIgite o nome do seu objeto:")
+idade= int(input("Digite a idade do seu objeto:"))
+pet = input ("Digite se o objeto tem pet:")
+if (pet == "Sim"):
+    animal = input("Digte qual pet ele tem:")
+else:
+    animal = "Não"
+
+cpf = input("Digite o cpf do obejto:")
+cartao = input("Digite o cartão do objeto:")
+
+pessoa5 = Pessoa(nome,idade,animal,cpf,cartao)
+pessoa5.apresentar()
