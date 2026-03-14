@@ -5,23 +5,20 @@ from datetime import date
 class Biblioteca:
 
     def __init__(self):
-        """
-        Conecta ao banco de dados
-        """
 
         self.conexao = mysql.connector.connect(
             host="localhost",
             user="root",
             password="",
             database="bliotecatitov1"
-        )
+        )  
 
         self.cursor = self.conexao.cursor()
 
         print("Conectado ao banco com sucesso!")
 
-        # CLIENTE
-    
+    # CLIENTES
+
     def cadastrar_cliente(self):
 
         nome = input("Nome: ")
@@ -30,13 +27,11 @@ class Biblioteca:
 
         sql = """
         INSERT INTO cliente
-        (nome_cliente, email_cliente, cpf_cliente)
+        (nome_cliente,email_cliente,cpf_cliente)
         VALUES (%s,%s,%s)
         """
 
-        valores = (nome, email, cpf)
-
-        self.cursor.execute(sql, valores)
+        self.cursor.execute(sql, (nome, email, cpf))
         self.conexao.commit()
 
         print("Cliente cadastrado!")
@@ -47,15 +42,15 @@ class Biblioteca:
 
         self.cursor.execute(sql)
 
-        resultado = self.cursor.fetchall()
+        clientes = self.cursor.fetchall()
 
         print("\n--- CLIENTES ---")
 
-        for cliente in resultado:
+        for cliente in clientes:
             print(cliente)
 
-        # LIVROS
-    
+    # LIVROS
+
     def cadastrar_livro(self):
 
         titulo = input("Titulo: ")
@@ -64,13 +59,11 @@ class Biblioteca:
 
         sql = """
         INSERT INTO livro
-        (titulo_livro, isbn_livro, editora_livro, data_entrada_livro)
+        (titulo_livro,isbn_livro,editora_livro,data_entrada_livro)
         VALUES (%s,%s,%s,CURDATE())
         """
 
-        valores = (titulo, isbn, editora)
-
-        self.cursor.execute(sql, valores)
+        self.cursor.execute(sql, (titulo, isbn, editora))
         self.conexao.commit()
 
         print("Livro cadastrado!")
@@ -88,74 +81,170 @@ class Biblioteca:
         for livro in livros:
             print(livro)
 
-        # EMPRESTIMO
-    
+    # JOGOS
+
+    def cadastrar_jogo(self):
+
+        nome = input("Nome do jogo: ")
+        categoria = input("Categoria: ")
+        fornecedor = input("Fornecedor: ")
+
+        sql = """
+        INSERT INTO jogo
+        (nome_jogo,categoria_jogo,fornecedor_jogo,estado_jogo)
+        VALUES (%s,%s,%s,'disponivel')
+        """
+
+        self.cursor.execute(sql, (nome, categoria, fornecedor))
+        self.conexao.commit()
+
+        print("Jogo cadastrado!")
+
+    def listar_jogos(self):
+
+        sql = "SELECT * FROM jogo"
+
+        self.cursor.execute(sql)
+
+        jogos = self.cursor.fetchall()
+
+        print("\n--- JOGOS ---")
+
+        for jogo in jogos:
+            print(jogo)
+
+    # VERIFICAR DISPONIBILIDADE
+
+    def verificar_livro_disponivel(self, id_livro):
+
+        sql = """
+        SELECT *
+        FROM item_emprestimo ie
+        JOIN emprestimo e
+        ON ie.fk_emprestimo = e.id_emprestimo
+        WHERE ie.fk_livro = %s
+        AND e.estado_retorno_emprestimo IS NULL
+        """
+
+        self.cursor.execute(sql, (id_livro,))
+
+        resultado = self.cursor.fetchone()
+
+        return resultado is None
+
+    def verificar_jogo_disponivel(self, id_jogo):
+
+        sql = """
+        SELECT *
+        FROM item_emprestimo ie
+        JOIN emprestimo e
+        ON ie.fk_emprestimo = e.id_emprestimo
+        WHERE ie.fk_jogo = %s
+        AND e.estado_retorno_emprestimo IS NULL
+        """
+
+        self.cursor.execute(sql, (id_jogo,))
+
+        resultado = self.cursor.fetchone()
+
+        return resultado is None
+
+    # CRIAR EMPRESTIMO
+
     def criar_emprestimo(self):
 
-        data_inicio = date.today()
+        print("\nCLIENTES DISPONÍVEIS")
+        self.listar_clientes()
 
+        id_cliente = input("Digite o ID do cliente: ")
+
+        print("\n1 - Emprestar Livro")
+        print("2 - Emprestar Jogo")
+
+        tipo = input("Escolha: ")
+
+        data_inicio = date.today()
         data_fim = input("Data de devolução (AAAA-MM-DD): ")
 
         sql = """
         INSERT INTO emprestimo
-        (data_inicio_emprestimo,
-        data_termino_emprestimo,
-        estado_entrega_emprestimo)
-        VALUES (%s,%s,%s)
+        (data_inicio_emprestimo,data_termino_emprestimo,
+        estado_entrega_emprestimo,estado_retorno_emprestimo)
+        VALUES (%s,%s,%s,%s)
         """
 
-        valores = (data_inicio, data_fim, "emprestado")
+        valores = (data_inicio, data_fim, "emprestado", None)
 
         self.cursor.execute(sql, valores)
-        self.conexao.commit()
 
-        print("Empréstimo criado!")
+        id_emprestimo = self.cursor.lastrowid
 
-        # VINCULAR CLIENTE AO EMPRESTIMO
-    
-    def vincular_cliente_emprestimo(self):
-
-        cliente = input("ID do cliente: ")
-        emprestimo = input("ID do emprestimo: ")
-
-        sql = """
+        sql_cliente = """
         INSERT INTO realiza_emprestimo
         (fk_cliente,fk_emprestimo)
         VALUES (%s,%s)
         """
 
-        valores = (cliente, emprestimo)
+        self.cursor.execute(sql_cliente, (id_cliente, id_emprestimo))
 
-        self.cursor.execute(sql, valores)
+        if tipo == "1":
+
+            self.listar_livros()
+            id_livro = input("Digite o ID do livro: ")
+
+            if not self.verificar_livro_disponivel(id_livro):
+                print("Livro já emprestado!")
+                return
+
+            sql_item = """
+            INSERT INTO item_emprestimo
+            (fk_emprestimo,fk_livro)
+            VALUES (%s,%s)
+            """
+
+            self.cursor.execute(sql_item, (id_emprestimo, id_livro))
+
+            item = "Livro ID " + id_livro
+
+        elif tipo == "2":
+
+            self.listar_jogos()
+            id_jogo = input("Digite o ID do jogo: ")
+
+            if not self.verificar_jogo_disponivel(id_jogo):
+                print("Jogo já emprestado!")
+                return
+
+            sql_item = """
+            INSERT INTO item_emprestimo
+            (fk_emprestimo,fk_jogo)
+            VALUES (%s,%s)
+            """
+
+            self.cursor.execute(sql_item, (id_emprestimo, id_jogo))
+
+            item = "Jogo ID " + id_jogo
+
+        else:
+            print("Opção inválida")
+            return
+
         self.conexao.commit()
 
-        print("Cliente vinculado ao empréstimo!")
+        print("\n========== COMPROVANTE ==========")
+        print("Empréstimo:", id_emprestimo)
+        print("Cliente:", id_cliente)
+        print("Item:", item)
+        print("Data início:", data_inicio)
+        print("Data devolução:", data_fim)
+        print("Status: EMPRESTADO")
+        print("=================================")
 
-        # REGISTRAR ITEM EMPRESTADO
-    
-    def registrar_item_livro(self):
+    # DEVOLUÇÃO
 
-        emprestimo = input("ID do emprestimo: ")
-        livro = input("ID do livro: ")
-
-        sql = """
-        INSERT INTO item_emprestimo
-        (fk_emprestimo,fk_livro)
-        VALUES (%s,%s)
-        """
-
-        valores = (emprestimo, livro)
-
-        self.cursor.execute(sql, valores)
-        self.conexao.commit()
-
-        print("Livro adicionado ao empréstimo!")
-
-        # DEVOLUÇÃO
-    
     def registrar_devolucao(self):
 
-        emprestimo = input("ID do emprestimo: ")
+        id_emprestimo = input("Digite o ID do empréstimo: ")
 
         sql = """
         UPDATE emprestimo
@@ -163,23 +252,24 @@ class Biblioteca:
         WHERE id_emprestimo = %s
         """
 
-        valores = (emprestimo,)
-
-        self.cursor.execute(sql, valores)
+        self.cursor.execute(sql, (id_emprestimo,))
         self.conexao.commit()
 
         print("Devolução registrada!")
 
-        # RELATÓRIO COM JOIN
-    
+    # RELATÓRIO
+
     def relatorio_emprestimos(self):
 
         sql = """
         SELECT
         cliente.nome_cliente,
         livro.titulo_livro,
+        jogo.nome_jogo,
+        emprestimo.id_emprestimo,
         emprestimo.data_inicio_emprestimo,
-        emprestimo.data_termino_emprestimo
+        emprestimo.data_termino_emprestimo,
+        emprestimo.estado_retorno_emprestimo
 
         FROM cliente
 
@@ -192,21 +282,24 @@ class Biblioteca:
         JOIN item_emprestimo
         ON emprestimo.id_emprestimo = item_emprestimo.fk_emprestimo
 
-        JOIN livro
+        LEFT JOIN livro
         ON livro.id_livro = item_emprestimo.fk_livro
+
+        LEFT JOIN jogo
+        ON jogo.id_jogo = item_emprestimo.fk_jogo
         """
 
         self.cursor.execute(sql)
 
         resultado = self.cursor.fetchall()
 
-        print("\n--- RELATÓRIO DE EMPRÉSTIMOS ---")
+        print("\n===== RELATÓRIO =====")
 
         for linha in resultado:
             print(linha)
 
-        # MENU
-    
+    # MENU
+
     def menu(self):
 
         while True:
@@ -216,9 +309,9 @@ class Biblioteca:
             print("2 - Listar clientes")
             print("3 - Cadastrar livro")
             print("4 - Listar livros")
-            print("5 - Criar empréstimo")
-            print("6 - Vincular cliente ao empréstimo")
-            print("7 - Registrar livro no empréstimo")
+            print("5 - Cadastrar jogo")
+            print("6 - Listar jogos")
+            print("7 - Realizar empréstimo")
             print("8 - Registrar devolução")
             print("9 - Relatório de empréstimos")
             print("0 - Sair")
@@ -238,13 +331,13 @@ class Biblioteca:
                 self.listar_livros()
 
             elif opcao == "5":
-                self.criar_emprestimo()
+                self.cadastrar_jogo()
 
             elif opcao == "6":
-                self.vincular_cliente_emprestimo()
+                self.listar_jogos()
 
             elif opcao == "7":
-                self.registrar_item_livro()
+                self.criar_emprestimo()
 
             elif opcao == "8":
                 self.registrar_devolucao()
