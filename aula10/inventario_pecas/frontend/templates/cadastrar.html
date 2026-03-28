@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Cadastrar</title>
+</head>
+<body>
+
+<h1>Cadastro</h1>
+
+<form method="POST">
+    <input name="codigo" placeholder="Código"><br>
+    <input name="nome" placeholder="Nome"><br>
+    <input name="preco" type="number" step="0.01"><br>
+    <input name="quantidade" type="number"><br>
+    <button type="submit">Cadastrar</button>
+</form>
+
+{% if mensagem %}
+<p>{{ mensagem }}</p>
+{% endif %}
+
+</body>
+</html>
