@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Estoque</title>
+</head>
+<body>
+
+<h1>Inventário</h1>
+
+<h3>Valor total: R$ {{ valor_total }}</h3>
+
+<a href="/cadastrar">Cadastrar nova peça</a>
+
+<table border="1">
+<tr>
+    <th>Código</th>
+    <th>Nome</th>
+    <th>Preço</th>
+    <th>Quantidade</th>
+</tr>
+
+{% for p in pecas %}
+<tr>
+    <td>{{ p.codigo }}</td>
+    <td>{{ p.nome }}</td>
+    <td>{{ p.preco }}</td>
+    <td>{{ p.quantidade }}</td>
+</tr>
+{% endfor %}
+
+</table>
+
+</body>
+</html>

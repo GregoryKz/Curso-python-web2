@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Adicionar</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <h1>Lista de tarefas</h1>
+
+    <form method="POST">
+        <input type="text" name="tarefa" placeholder="Digite uma tarefa">
+        <button type="submit">Adicionar</button>
+    </form>
+
+    <ul>
+        {% for t in tarefas %}
+            <li>{{ t }}</li>
+        {% endfor %}
+    </ul>
+</body>
+</html>
